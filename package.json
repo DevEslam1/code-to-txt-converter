@@ -1,7 +1,7 @@
 {
-  "name": "dart-to-txt-converter",
+  "name": "code-to-txt-converter",
   "version": "1.0.0",
-  "description": "A local tool to copy Dart files from lib/ as txt files without modifying the original files.",
+  "description": "A premium, local-first web utility to scan, filter, and bundle project source files as safe .txt copies.",
   "scripts": {
     "dev": "npx -y serve -l 3000"
   },
