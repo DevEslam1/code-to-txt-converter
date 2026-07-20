@@ -17,6 +17,18 @@ It does **not** touch or modify any files inside your original project folders.
 - **🎨 Modern Themes & AMOLED Black:** Beautiful theme toggles including Cyber Blue, Purple Void, Forest Mint, Nordic Frost, and a pure AMOLED Black (default) mode.
 
 ---
+## Screenshots
+
+### 🖤 AMOLED Black (Default)
+![AMOLED Theme](screenshots/amoled_theme.png)
+
+### 💜 Purple Void Theme
+![Purple Theme](screenshots/purple_theme.png)
+
+### 💙 Deep Cyber Theme
+![Cyber Blue Theme](screenshots/cyber_blue_theme.png)
+
+---
 
 ## Getting Started
 
