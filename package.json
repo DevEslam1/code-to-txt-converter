@@ -1,0 +1,11 @@
+{
+  "name": "dart-to-txt-converter",
+  "version": "1.0.0",
+  "description": "A local tool to copy Dart files from lib/ as txt files without modifying the original files.",
+  "scripts": {
+    "dev": "npx -y serve -l 3000"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

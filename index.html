@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dart to TXT Copy Converter</title>
+  <!-- Outfit Font from Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- JSZip for ZIP packaging -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-background-glow"></div>
+  
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-logo">
+        <div class="logo-icon">
+          <i data-lucide="file-type-2"></i>
+        </div>
+        <div>
+          <h1>Code to TXT Converter</h1>
+          <p>Extract, filter, and bundle project source files as safe <code>.txt</code> files.</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <!-- Theme Selector -->
+        <div class="theme-selector">
+          <button class="theme-btn theme-btn-blue" data-theme="blue" title="Deep Cyber"></button>
+          <button class="theme-btn theme-btn-amoled active" data-theme="amoled" title="AMOLED Black"></button>
+          <button class="theme-btn theme-btn-purple" data-theme="purple" title="Purple Void"></button>
+          <button class="theme-btn theme-btn-emerald" data-theme="emerald" title="Forest Mint"></button>
+          <button class="theme-btn theme-btn-nord" data-theme="nord" title="Nordic Frost"></button>
+        </div>
+        <div class="status-badge" id="app-status">
+          <span class="status-dot"></span>
+          <span class="status-text">Ready</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="workspace">
+      <!-- Left Column: Source Selection & Preview -->
+      <section class="workspace-panel card source-panel">
+        <div class="card-header">
+          <div class="card-title">
+            <i data-lucide="folder-open"></i>
+            <h2>1. Source Project</h2>
+          </div>
+          <div class="source-buttons">
+            <button id="btn-select-source" class="btn btn-primary">
+              <i data-lucide="folder-search"></i>
+              Select Folder
+            </button>
+            <button id="btn-select-files" class="btn btn-primary">
+              <i data-lucide="file-plus"></i>
+              Select Files
+            </button>
+          </div>
+        </div>
+
+        <!-- Drag & Drop Zone / Initial State -->
+        <div class="dropzone" id="source-dropzone">
+          <i data-lucide="upload-cloud" class="dropzone-icon"></i>
+          <h3>Select or drag a project folder</h3>
+          <p>The tool only reads files and converts them in-memory; your project files will <strong>not</strong> be modified.</p>
+        </div>
+
+        <!-- File List & Preview State (Hidden by default) -->
+        <div class="preview-area hidden" id="preview-container">
+          <div class="stats-grid">
+            <div class="stat-item">
+              <span class="stat-label">Source Folder</span>
+              <span class="stat-value" id="source-folder-name">-</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Selected Files</span>
+              <span class="stat-value text-accent" id="dart-files-count">0</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Total Code Size</span>
+              <span class="stat-value" id="total-code-size">0 KB</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Total Lines (LOC)</span>
+              <span class="stat-value" id="total-lines-count">0</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Total Chars</span>
+              <span class="stat-value" id="total-chars-count">0</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Est. AI Tokens</span>
+              <span class="stat-value text-accent" id="est-tokens-count">0</span>
+            </div>
+          </div>
+
+          <!-- Search & Filters -->
+          <div class="filter-bar">
+            <div class="search-box">
+              <i data-lucide="search" class="search-icon"></i>
+              <input type="text" id="file-search-input" placeholder="Search files by path or name...">
+            </div>
+            <div class="preset-box">
+              <label for="preset-selector" class="preset-label">Project Preset:</label>
+              <select id="preset-selector" class="preset-select">
+                <option value="auto">All Detected Files</option>
+                <option value="flutter">Flutter / Dart Project</option>
+                <option value="react-native">React Native Project</option>
+                <option value="web">Web Front-End (HTML/CSS/JS/TS)</option>
+                <option value="python">Python Project</option>
+              </select>
+              <span id="detected-badge" class="detected-badge hidden">Detected: Flutter</span>
+            </div>
+            <div class="filter-toggles">
+              <label class="toggle-switch">
+                <input type="checkbox" id="chk-exclude-generated" checked>
+                <span class="toggle-slider"></span>
+                <span class="toggle-label">Exclude Generated Files (*.g.dart, *.min.js, etc.)</span>
+              </label>
+              <label class="toggle-switch">
+                <input type="checkbox" id="chk-exclude-tests">
+                <span class="toggle-slider"></span>
+                <span class="toggle-label">Exclude Test Files (*_test.dart, *.test.js, etc.)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Extension Selector -->
+          <div class="extensions-panel hidden" id="extensions-panel">
+            <h3 class="selector-title">Filter by Extensions</h3>
+            <div class="extensions-tags" id="extensions-list">
+              <!-- Dynamically populated extension tags -->
+            </div>
+          </div>
+
+          <div class="file-list-header">
+            <h3>Files to Convert</h3>
+            <div class="file-actions">
+              <button id="btn-select-all" class="btn btn-link">Select All</button>
+              <button id="btn-deselect-all" class="btn btn-link">Deselect All</button>
+            </div>
+          </div>
+
+          <div class="file-list-wrapper">
+            <ul class="file-list" id="file-list-element">
+              <!-- Dynamically populated files -->
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Column: Export Setup & Output Console -->
+      <div class="right-column">
+        <!-- Export Panel -->
+        <section class="workspace-panel card export-panel">
+          <div class="card-header">
+            <div class="card-title">
+              <i data-lucide="download-cloud"></i>
+              <h2>2. Export Options</h2>
+            </div>
+          </div>
+
+          <div class="export-options-grid">
+            <!-- Option 1: Direct File Copy -->
+            <div class="export-option-card active" id="option-local-folder">
+              <div class="option-header">
+                <input type="radio" name="export-mode" id="radio-local-folder" checked>
+                <label for="radio-local-folder">Save to Local Folder</label>
+              </div>
+              <p>Recreate the <code>lib/</code> subfolder structure and save <code>.txt</code> copies into a directory of your choice.</p>
+            </div>
+
+            <!-- Option 2: Zip Download -->
+            <div class="export-option-card" id="option-zip-download">
+              <div class="option-header">
+                <input type="radio" name="export-mode" id="radio-zip">
+                <label for="radio-zip">Download as ZIP</label>
+              </div>
+              <p>Download all copied <code>.txt</code> files bundled in a single, structured ZIP archive directly in your browser.</p>
+            </div>
+
+            <!-- Option 3: Single File Bundle (AI Prompt Builder) -->
+            <div class="export-option-card" id="option-single-bundle">
+              <div class="option-header">
+                <input type="radio" name="export-mode" id="radio-bundle">
+                <label for="radio-bundle">Single File Bundle (AI Prompt)</label>
+              </div>
+              <p>Concatenate all selected files into one single, structured <code>.txt</code> document with clear dividers—perfect for LLM context prompts.</p>
+            </div>
+          </div>
+
+          <div class="structure-selector-container" id="structure-selector-container">
+            <h3 class="selector-title">Output Structure</h3>
+            <div class="structure-options-grid">
+              <div class="structure-option-card active" id="option-struct-nested">
+                <input type="radio" name="folder-structure" id="struct-nested" checked>
+                <div class="struct-details">
+                  <label for="struct-nested">Keep Folders</label>
+                  <span>e.g. <code>lib/src/main.txt</code></span>
+                </div>
+              </div>
+              <div class="structure-option-card" id="option-struct-flat">
+                <input type="radio" name="folder-structure" id="struct-flat">
+                <div class="struct-details">
+                  <label for="struct-flat">All Together (Flat)</label>
+                  <span>e.g. <code>lib_src_main.txt</code></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="export-actions-wrapper">
+            <button id="btn-convert" class="btn btn-accent btn-large" disabled>
+              <i data-lucide="play-circle"></i>
+              Start Copy Conversion
+            </button>
+          </div>
+        </section>
+
+        <!-- Console Log -->
+        <section class="workspace-panel card console-panel">
+          <div class="card-header">
+            <div class="card-title">
+              <i data-lucide="terminal"></i>
+              <h2>Process Console</h2>
+            </div>
+            <button id="btn-clear-console" class="btn btn-link">
+              <i data-lucide="trash-2"></i> Clear
+            </button>
+          </div>
+          <div class="console-body" id="console-log">
+            <div class="console-line system-line">[System] Waiting for folder selection...</div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Code Preview Modal -->
+  <div id="preview-modal" class="modal-backdrop hidden">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-title-wrapper">
+          <i data-lucide="file-code" class="modal-file-icon"></i>
+          <h3 id="preview-filename">file_preview.dart</h3>
+        </div>
+        <div class="modal-header-actions">
+          <button id="btn-modal-copy" class="btn btn-primary">
+            <i data-lucide="copy"></i> Copy Content
+          </button>
+          <button id="btn-modal-close" class="btn btn-link btn-modal-close-icon">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <pre><code id="preview-code">Loading file content...</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+  </script>
+</body>
+</html>
