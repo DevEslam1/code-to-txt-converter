@@ -19,8 +19,8 @@ It does **not** touch or modify any files inside your original project folders.
 ---
 ## Screenshots
 
-### 🖤 AMOLED Black (Default)
-![AMOLED Theme](screenshots/amoled_theme.png)
+### 🖤 AMOLED Black (Default - Loaded Project)
+![AMOLED Theme](screenshots/amoled_theme_dmx.png)
 
 ### 💜 Purple Void Theme
 ![Purple Theme](screenshots/purple_theme.png)
