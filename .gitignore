@@ -3,6 +3,3 @@ node_modules/
 .idea/
 .vscode/
 npm-debug.log*
-project_code_bundle_*.txt
-converted_output/
-
