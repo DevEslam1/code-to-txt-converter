@@ -8,6 +8,8 @@ const dartFilesCount = document.getElementById('dart-files-count');
 const fileListElement = document.getElementById('file-list-element');
 const btnSelectAll = document.getElementById('btn-select-all');
 const btnDeselectAll = document.getElementById('btn-deselect-all');
+const btnRefresh = document.getElementById('btn-refresh');
+const btnRefreshTop = document.getElementById('btn-refresh-top');
 const btnConvert = document.getElementById('btn-convert');
 const btnClearConsole = document.getElementById('btn-clear-console');
 const consoleLog = document.getElementById('console-log');
@@ -118,6 +120,14 @@ function initEventListeners() {
   // Select / Deselect All Preview Files
   btnSelectAll.addEventListener('click', () => toggleAllFiles(true));
   btnDeselectAll.addEventListener('click', () => toggleAllFiles(false));
+
+  // Refresh / Recheck Project
+  if (btnRefresh) {
+    btnRefresh.addEventListener('click', handleRefresh);
+  }
+  if (btnRefreshTop) {
+    btnRefreshTop.addEventListener('click', handleRefresh);
+  }
 
   // Clear Console
   btnClearConsole.addEventListener('click', () => {
@@ -295,6 +305,37 @@ async function processSelectedFilesList(fileHandles) {
   log(`Loaded ${foundFiles.length} files successfully. Ready to convert.`, 'system');
 }
 
+// Refresh / Re-check Project Handler
+async function handleRefresh() {
+  const icons = [
+    btnRefresh ? btnRefresh.querySelector('i') : null,
+    btnRefreshTop ? btnRefreshTop.querySelector('i') : null
+  ].filter(Boolean);
+
+  icons.forEach(icon => icon.classList.add('spin'));
+  
+  try {
+    if (sourceDirHandle) {
+      log(`[Refresh] Re-checking project directory: "${sourceDirHandle.name}"...`, 'info');
+      setAppStatus('working', 'Refreshing...');
+      await processSourceDirectory(sourceDirHandle);
+      log(`[Refresh] Re-scan finished successfully.`, 'success');
+    } else if (foundFiles.length > 0) {
+      log(`[Refresh] Refreshing file list state (${foundFiles.length} files)...`, 'info');
+      filterAndDisplayFiles();
+      log(`[Refresh] File list view updated.`, 'success');
+    } else {
+      log('[Refresh] No project loaded yet. Please select a folder first.', 'warning');
+    }
+  } catch (err) {
+    log(`[Refresh Error] Failed to recheck project: ${err.message}`, 'error');
+  } finally {
+    setTimeout(() => {
+      icons.forEach(icon => icon.classList.remove('spin'));
+    }, 500);
+  }
+}
+
 // Drop Zone Folder Drop Handler
 async function handleDrop(e) {
   e.preventDefault();
@@ -375,6 +416,9 @@ async function scanDirectoryRecursive(dirHandle, currentPath = "") {
 
 // Main logic to analyze and filter scanned directories
 async function processSourceDirectory(directoryHandle) {
+  // Preserve previous file selection states if rescanning
+  const previousSelections = new Map(foundFiles.map(f => [f.relativePath, f.selected]));
+
   sourceDirHandle = directoryHandle;
   sourceFolderName.textContent = directoryHandle.name;
   fileContentCache = {}; // Reset cache
@@ -383,7 +427,16 @@ async function processSourceDirectory(directoryHandle) {
   
   try {
     // Recursive scan
-    foundFiles = await scanDirectoryRecursive(directoryHandle);
+    const newFiles = await scanDirectoryRecursive(directoryHandle);
+    
+    // Restore selection state for known files
+    newFiles.forEach(file => {
+      if (previousSelections.has(file.relativePath)) {
+        file.selected = previousSelections.get(file.relativePath);
+      }
+    });
+
+    foundFiles = newFiles;
     
     if (foundFiles.length === 0) {
       log('No valid text/code files found in the directory structure.', 'error');
